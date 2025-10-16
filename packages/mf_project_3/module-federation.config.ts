@@ -7,13 +7,14 @@ export default createModuleFederationConfig({
   exposes: {
     './Button': './src/components/Button.tsx',
     './Tab': './src/components/Tab.tsx',
+    './ShoppingCart': './src/components/ShoppingCart.tsx',
+    './RemoteComponentShowcase': './src/components/RemoteComponentShowcase.tsx',
   },
   remotes: {
     provider:
       process.env.NODE_ENV === 'development'
         ? 'rslib_provider@http://localhost:3001/mf-manifest.json'
         : 'rslib_provider@https://mf2-8nl.pages.dev/mf-manifest.json',
-    //'rslib_provider@https://unpkg.com/module-federation-rslib-provider@latest/dist/mf/mf-manifest.json',
   },
   shareStrategy: 'loaded-first',
   shared: {

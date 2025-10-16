@@ -8,6 +8,8 @@ export default createModuleFederationConfig({
   name: 'mf_project_2',
   exposes: {
     '.': './src/components/ProviderComponent.tsx',
+    './Dashboard': './src/components/Dashboard.tsx',
+    './CircularDemo': './src/components/CircularDemo.tsx',
   },
   remotes: {
     provider:

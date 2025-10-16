@@ -1,0 +1,124 @@
+.shopping-cart {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.shopping-cart__header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.shopping-cart__header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.shopping-cart__count {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.shopping-cart__items {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.cart-item {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+}
+
+.cart-item:hover {
+  background-color: #f8f9fa;
+}
+
+.cart-item__image {
+  font-size: 32px;
+  margin-right: 16px;
+}
+
+.cart-item__info {
+  flex: 1;
+}
+
+.cart-item__info h4 {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.cart-item__info p {
+  margin: 0;
+  color: #666;
+  font-weight: bold;
+}
+
+.cart-item__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.quantity-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.quantity-btn:hover {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+.quantity {
+  min-width: 24px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.shopping-cart__footer {
+  padding: 20px;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+}
+
+.shopping-cart__total {
+  font-size: 18px;
+  margin-bottom: 16px;
+  text-align: center;
+  color: #333;
+}
+
+.shopping-cart__actions {
+  display: flex;
+  gap: 12px;
+  flex-direction: column;
+}
+
+@media (min-width: 480px) {
+  .shopping-cart__actions {
+    flex-direction: row;
+  }
+}
