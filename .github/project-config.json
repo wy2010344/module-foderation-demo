@@ -1,0 +1,16 @@
+{
+  "projects": [
+    {
+      "name": "mf_project_2",
+      "path": "packages/mf_project_2",
+      "cloudflare_project": "mf2",
+      "url": "https://mf2-8nl.pages.dev/"
+    },
+    {
+      "name": "mf_project_3",
+      "path": "packages/mf_project_3",
+      "cloudflare_project": "mf3",
+      "url": "https://mf3-6sa.pages.dev/"
+    }
+  ]
+}

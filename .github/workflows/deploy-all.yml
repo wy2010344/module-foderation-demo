@@ -6,8 +6,75 @@ on:
   workflow_dispatch: # 允许手动触发
 
 jobs:
-  deploy:
+  # 检测变化的项目
+  detect-changes:
     runs-on: ubuntu-latest
+    outputs:
+      changed-projects: ${{ steps.detect.outputs.changed-projects }}
+      project-configs: ${{ steps.detect.outputs.project-configs }}
+      has-changes: ${{ steps.detect.outputs.has-changes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Detect changed projects
+        id: detect
+        run: |
+          # 读取项目配置
+          config=$(cat .github/project-config.json)
+          all_projects=$(echo "$config" | jq -r '.projects[].name')
+
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # 手动触发时部署所有项目
+            changed_projects=$(echo "$config" | jq -c '[.projects[].name]')
+            project_configs=$(echo "$config" | jq -c '.projects')
+            has_changes="true"
+            echo "Manual trigger - deploying all projects: $changed_projects"
+          else
+            # 检测变化的项目
+            changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+            echo "Changed files: $changed_files"
+            
+            changed_projects="[]"
+            project_configs="[]"
+            has_changes="false"
+            
+            # 遍历所有项目，检查是否有变化
+            for project in $all_projects; do
+              project_path=$(echo "$config" | jq -r ".projects[] | select(.name == \"$project\") | .path")
+              if echo "$changed_files" | grep -q "^$project_path/"; then
+                echo "Detected changes in $project ($project_path)"
+                # 添加到变化的项目列表
+                changed_projects=$(echo "$changed_projects" | jq --arg proj "$project" '. + [$proj]')
+                # 添加项目配置
+                project_config=$(echo "$config" | jq ".projects[] | select(.name == \"$project\")")
+                project_configs=$(echo "$project_configs" | jq --argjson config "$project_config" '. + [$config]')
+                has_changes="true"
+              fi
+            done
+          fi
+
+          echo "changed-projects=$changed_projects" >> $GITHUB_OUTPUT
+          echo "project-configs=$project_configs" >> $GITHUB_OUTPUT
+          echo "has-changes=$has_changes" >> $GITHUB_OUTPUT
+          echo "Final changed projects: $changed_projects"
+          echo "Final project configs: $project_configs"
+
+  # 构建和部署
+  deploy:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-changes == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project-config: ${{ fromJson(needs.detect-changes.outputs.project-configs) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,62 +105,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # 并行构建两个项目（因为相互依赖，构建时会使用本地类型）
-      - name: Build all projects
-        run: pnpm build
+      - name: Build project
+        run: pnpm --filter ${{ matrix.project-config.name }} build
 
-      # 部署策略：先部署一个，等待可用，再部署另一个，最后重新部署第一个
-      - name: Deploy mf_project_2 (first deployment)
+      - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: pages deploy packages/mf_project_2/dist --project-name mf2
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy ${{ matrix.project-config.path }}/dist --project-name ${{ matrix.project-config.cloudflare_project }}
 
-      - name: Wait for mf_project_2 to be available
+      - name: Deployment summary
         run: |
-          echo "Waiting for mf_project_2 to be available..."
-          for i in {1..10}; do
-            if curl -sf https://mf2-8nl.pages.dev/mf-manifest.json >/dev/null; then
-              echo "✅ mf_project_2 manifest is reachable"
-              break
-            else
-              echo "⏳ Waiting for mf_project_2 manifest... (attempt $i/10)"
-              sleep 10
-            fi
-          done
-
-      - name: Deploy mf_project_3
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: pages deploy packages/mf_project_3/dist --project-name mf3
-
-      - name: Wait for mf_project_3 to be available
-        run: |
-          echo "Waiting for mf_project_3 to be available..."
-          for i in {1..10}; do
-            if curl -sf https://mf3-6sa.pages.dev/mf-manifest.json >/dev/null; then
-              echo "✅ mf_project_3 manifest is reachable"
-              break
-            else
-              echo "⏳ Waiting for mf_project_3 manifest... (attempt $i/10)"
-              sleep 10
-            fi
-          done
-
-      # 重新部署 mf_project_2，确保它能正确引用已部署的 mf_project_3
-      - name: Redeploy mf_project_2 (final deployment)
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CF_API_TOKEN }}
-          accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: pages deploy packages/mf_project_2/dist --project-name mf2
-
-      - name: Verify deployments
-        run: |
-          echo "🎉 Deployment completed!"
-          echo "📍 mf_project_2: https://mf2-8nl.pages.dev/"
-          echo "📍 mf_project_3: https://mf3-6sa.pages.dev/"
-          echo "🔄 Both projects are mutually dependent and fully deployed"
+          echo "📍 ${{ matrix.project-config.name }} deployed: ${{ matrix.project-config.url }}"
