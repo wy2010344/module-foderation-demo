@@ -38,26 +38,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # 验证 Cloudflare API Token
-      - name: Verify Cloudflare API Token
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-        run: |
-          echo "Verifying Cloudflare API Token..."
-          npx wrangler whoami
-
       # 并行构建两个项目（因为相互依赖，构建时会使用本地类型）
       - name: Build all projects
         run: pnpm build
 
       # 部署策略：先部署一个，等待可用，再部署另一个，最后重新部署第一个
       - name: Deploy mf_project_2 (first deployment)
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-        run: |
-          echo "Deploying to project: mf2"
-          echo "Token length: ${#CLOUDFLARE_API_TOKEN}"
-          npx wrangler pages deploy packages/mf_project_2/dist --project-name mf2
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          command: pages deploy packages/mf_project_2/dist --project-name mf2
 
       - name: Wait for mf_project_2 to be available
         run: |
@@ -73,10 +63,10 @@ jobs:
           done
 
       - name: Deploy mf_project_3
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-        run: |
-          npx wrangler pages deploy packages/mf_project_3/dist --project-name mf3
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          command: pages deploy packages/mf_project_3/dist --project-name mf3
 
       - name: Wait for mf_project_3 to be available
         run: |
@@ -93,10 +83,10 @@ jobs:
 
       # 重新部署 mf_project_2，确保它能正确引用已部署的 mf_project_3
       - name: Redeploy mf_project_2 (final deployment)
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-        run: |
-          npx wrangler pages deploy packages/mf_project_2/dist --project-name mf2
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          command: pages deploy packages/mf_project_2/dist --project-name mf2
 
       - name: Verify deployments
         run: |
