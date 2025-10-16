@@ -6,95 +6,8 @@ on:
   workflow_dispatch: # 允许手动触发
 
 jobs:
-  # 检测变化的项目
-  detect-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      changed-projects: ${{ steps.detect.outputs.changed-projects }}
-      project-configs: ${{ steps.detect.outputs.project-configs }}
-      has-changes: ${{ steps.detect.outputs.has-changes }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Detect changed projects
-        id: detect
-        run: |
-          # 读取项目配置
-          config=$(cat .github/project-config.json)
-
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            # 手动触发时部署所有项目
-            changed_projects=$(echo "$config" | jq -c '[.projects[].name]')
-            project_configs=$(echo "$config" | jq -c '.projects')
-            has_changes="true"
-            echo "Manual trigger - deploying all projects"
-          else
-            # 检测变化的项目
-            changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
-            echo "Changed files:"
-            echo "$changed_files"
-            
-            # 初始化空数组
-            changed_projects="[]"
-            project_configs="[]"
-            has_changes="false"
-            
-            # 检查每个项目是否有变化
-            while IFS= read -r project_name; do
-              project_path=$(echo "$config" | jq -r ".projects[] | select(.name == \"$project_name\") | .path")
-              
-              if echo "$changed_files" | grep -q "^$project_path/"; then
-                echo "✅ Detected changes in $project_name ($project_path)"
-                
-                # 添加项目名到数组
-                changed_projects=$(echo "$changed_projects" | jq --arg name "$project_name" '. + [$name]')
-                
-                # 添加项目配置到数组
-                project_config=$(echo "$config" | jq ".projects[] | select(.name == \"$project_name\")")
-                project_configs=$(echo "$project_configs" | jq --argjson config "$project_config" '. + [$config]')
-                
-                has_changes="true"
-              else
-                echo "⏭️  No changes in $project_name ($project_path)"
-              fi
-            done < <(echo "$config" | jq -r '.projects[].name')
-          fi
-
-          # 确保输出格式正确
-          {
-            echo "changed-projects<<EOF"
-            echo "$changed_projects"
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
-
-          {
-            echo "project-configs<<EOF"
-            echo "$project_configs"
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
-
-          echo "has-changes=$has_changes" >> $GITHUB_OUTPUT
-
-          echo "=== Summary ==="
-          echo "Changed projects: $changed_projects"
-          echo "Has changes: $has_changes"
-
-  # 构建和部署
   deploy:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.has-changes == 'true'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        project-config: ${{ fromJson(needs.detect-changes.outputs.project-configs) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -125,16 +38,27 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build project
-        run: pnpm --filter ${{ matrix.project-config.name }} build
+      # 构建所有项目
+      - name: Build all projects
+        run: pnpm build
 
-      - name: Deploy to Cloudflare Pages
+      # 并行部署所有项目
+      - name: Deploy mf_project_2
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy ${{ matrix.project-config.path }}/dist --project-name ${{ matrix.project-config.cloudflare_project }}
+          command: pages deploy packages/mf_project_2/dist --project-name mf2
 
-      - name: Deployment summary
+      - name: Deploy mf_project_3
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy packages/mf_project_3/dist --project-name mf3
+
+      - name: Verify deployments
         run: |
-          echo "📍 ${{ matrix.project-config.name }} deployed: ${{ matrix.project-config.url }}"
+          echo "🎉 Deployment completed!"
+          echo "📍 mf_project_2: https://mf2-8nl.pages.dev/"
+          echo "📍 mf_project_3: https://mf3-6sa.pages.dev/"
