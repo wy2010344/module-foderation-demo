@@ -1,0 +1,57 @@
+name: Deploy all MF projects (mf_project_2 then mf_project_3)
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy-all:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        run: npm install -g pnpm@10
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build mf_project_2
+        run: pnpm --filter mf_project_2 build
+
+      - name: Install Wrangler
+        run: npm install -g @cloudflare/wrangler
+
+      - name: Publish mf_project_2
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          wrangler pages publish packages/mf_project_2/dist --project-name mf2-8nl
+
+      - name: Wait for mf_project_2 to be available
+        run: |
+          # simple retry check to wait until the manifest is reachable
+          for i in 1 2 3 4 5; do
+            if curl -sf https://mf2-8nl.pages.dev/mf-manifest.json >/dev/null; then
+              echo "mf_project_2 manifest reachable"
+              break
+            else
+              echo "waiting for mf_project_2 manifest... ($i)"
+              sleep 5
+            fi
+          done
+
+      - name: Build mf_project_3
+        run: pnpm --filter mf_project_3 build
+
+      - name: Publish mf_project_3
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          wrangler pages publish packages/mf_project_3/dist --project-name mf3-6sa
