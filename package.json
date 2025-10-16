@@ -9,7 +9,8 @@
     "build:all": "pnpm --filter mf_project_2 build && pnpm --filter mf_project_3 build",
     "deploy:all": "pnpm --filter mf_project_2 deploy && pnpm --filter mf_project_3 deploy",
     "dev:mf2": "pnpm --filter mf_project_2 dev",
-    "dev:mf3": "pnpm --filter mf_project_3 dev"
+    "dev:mf3": "pnpm --filter mf_project_3 dev",
+    "types:all": "pnpm --filter mf_project_2 types && pnpm --filter mf_project_3 types"
   },
   "keywords": [],
   "author": "wy2010344",

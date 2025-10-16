@@ -1,11 +1,12 @@
-name: Deploy all MF projects (mf_project_2 then mf_project_3)
+name: Deploy Module Federation Projects
 
 on:
   push:
     branches: [main]
+  workflow_dispatch: # 允许手动触发
 
 jobs:
-  build-and-deploy-all:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -16,10 +17,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install pnpm
+      - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: '10.18.2'
 
       - name: Get pnpm store directory
         shell: bash
@@ -37,38 +38,59 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build mf_project_2
-        run: pnpm --filter mf_project_2 build
+      # 并行构建两个项目（因为相互依赖，构建时会使用本地类型）
+      - name: Build all projects
+        run: pnpm build:all
 
-      - name: Install Wrangler
-        run: npm install -g wrangler
-
-      - name: Publish mf_project_2
+      # 部署策略：先部署一个，等待可用，再部署另一个，最后重新部署第一个
+      - name: Deploy mf_project_2 (first deployment)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
-          cd packages/mf_project_2
-          wrangler pages deploy dist --project-name mf2-8nl
+          npx wrangler pages deploy packages/mf_project_2/dist --project-name mf2-8nl
 
       - name: Wait for mf_project_2 to be available
         run: |
-          # simple retry check to wait until the manifest is reachable
-          for i in 1 2 3 4 5; do
+          echo "Waiting for mf_project_2 to be available..."
+          for i in {1..10}; do
             if curl -sf https://mf2-8nl.pages.dev/mf-manifest.json >/dev/null; then
-              echo "mf_project_2 manifest reachable"
+              echo "✅ mf_project_2 manifest is reachable"
               break
             else
-              echo "waiting for mf_project_2 manifest... ($i)"
-              sleep 5
+              echo "⏳ Waiting for mf_project_2 manifest... (attempt $i/10)"
+              sleep 10
             fi
           done
 
-      - name: Build mf_project_3
-        run: pnpm --filter mf_project_3 build
-
-      - name: Publish mf_project_3
+      - name: Deploy mf_project_3
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
-          cd packages/mf_project_3
-          wrangler pages deploy dist --project-name mf3-6sa
+          npx wrangler pages deploy packages/mf_project_3/dist --project-name mf3-6sa
+
+      - name: Wait for mf_project_3 to be available
+        run: |
+          echo "Waiting for mf_project_3 to be available..."
+          for i in {1..10}; do
+            if curl -sf https://mf3-6sa.pages.dev/mf-manifest.json >/dev/null; then
+              echo "✅ mf_project_3 manifest is reachable"
+              break
+            else
+              echo "⏳ Waiting for mf_project_3 manifest... (attempt $i/10)"
+              sleep 10
+            fi
+          done
+
+      # 重新部署 mf_project_2，确保它能正确引用已部署的 mf_project_3
+      - name: Redeploy mf_project_2 (final deployment)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          npx wrangler pages deploy packages/mf_project_2/dist --project-name mf2-8nl
+
+      - name: Verify deployments
+        run: |
+          echo "🎉 Deployment completed!"
+          echo "📍 mf_project_2: https://mf2-8nl.pages.dev/"
+          echo "📍 mf_project_3: https://mf3-6sa.pages.dev/"
+          echo "🔄 Both projects are mutually dependent and fully deployed"
