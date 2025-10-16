@@ -1,0 +1,7 @@
+{
+  "**/*.{js,ts,tsx,jsx,css,scss,md,json}": [
+    "pnpm -w -r eslint --fix",
+    "pnpm -w -r prettier --write",
+    "git add"
+  ]
+}

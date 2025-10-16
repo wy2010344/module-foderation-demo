@@ -1,0 +1,8 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# If commit message is already provided (like merge commits) skip
+if [ -z "$2" ]; then
+  # Run commitizen to prompt for commit message and write it to the file
+  npx --no-install --no commitizen --edit "$1"
+fi
