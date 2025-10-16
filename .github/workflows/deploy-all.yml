@@ -47,6 +47,7 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
           command: pages deploy packages/mf_project_2/dist --project-name mf2
 
       - name: Wait for mf_project_2 to be available
@@ -66,6 +67,7 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
           command: pages deploy packages/mf_project_3/dist --project-name mf3
 
       - name: Wait for mf_project_3 to be available
@@ -86,6 +88,7 @@ jobs:
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
           command: pages deploy packages/mf_project_2/dist --project-name mf2
 
       - name: Verify deployments

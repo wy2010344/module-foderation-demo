@@ -13,7 +13,6 @@
     "build:mf2": "pnpm --filter mf_project_2 build",
     "build:mf3": "pnpm --filter mf_project_3 build",
     "preview": "pnpm --parallel --filter \"mf_project_*\" preview",
-    "deploy": "pnpm --filter mf_project_2 deploy && pnpm --filter mf_project_3 deploy",
     "clean": "pnpm --parallel --filter \"mf_project_*\" exec rm -rf dist node_modules/.cache @mf-types",
     "types": "pnpm --parallel --filter \"mf_project_*\" types"
   },
@@ -27,8 +26,7 @@
     "@commitlint/config-conventional": "20.0.0",
     "@commitlint/cli": "20.1.0",
     "commitizen": "4.3.1",
-    "cz-conventional-changelog": "3.3.0",
-    "wrangler": "^3.78.12"
+    "cz-conventional-changelog": "3.3.0"
   },
   "config": {
     "commitizen": {

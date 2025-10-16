@@ -5,9 +5,7 @@
   "scripts": {
     "dev": "rsbuild dev --open",
     "build": "rsbuild build",
-    "preview": "rsbuild preview",
-    "deploy": "pnpm build && wrangler pages deploy dist --project-name mf2",
-    "types": "rsbuild build --analyze"
+    "preview": "rsbuild preview"
   },
   "dependencies": {
     "mve-core": "^3.0.0",

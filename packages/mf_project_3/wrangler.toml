@@ -1,6 +1,0 @@
-name = "mf3-6sa"
-compatibility_date = "2024-10-16"
-
-[env.production.pages]
-name = "mf3-6sa"
-compatibility_date = "2024-10-16"
