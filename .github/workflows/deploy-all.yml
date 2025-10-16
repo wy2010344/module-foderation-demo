@@ -29,43 +29,63 @@ jobs:
         run: |
           # 读取项目配置
           config=$(cat .github/project-config.json)
-          all_projects=$(echo "$config" | jq -r '.projects[].name')
 
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             # 手动触发时部署所有项目
             changed_projects=$(echo "$config" | jq -c '[.projects[].name]')
             project_configs=$(echo "$config" | jq -c '.projects')
             has_changes="true"
-            echo "Manual trigger - deploying all projects: $changed_projects"
+            echo "Manual trigger - deploying all projects"
           else
             # 检测变化的项目
             changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
-            echo "Changed files: $changed_files"
+            echo "Changed files:"
+            echo "$changed_files"
             
+            # 初始化空数组
             changed_projects="[]"
             project_configs="[]"
             has_changes="false"
             
-            # 遍历所有项目，检查是否有变化
-            for project in $all_projects; do
-              project_path=$(echo "$config" | jq -r ".projects[] | select(.name == \"$project\") | .path")
+            # 检查每个项目是否有变化
+            while IFS= read -r project_name; do
+              project_path=$(echo "$config" | jq -r ".projects[] | select(.name == \"$project_name\") | .path")
+              
               if echo "$changed_files" | grep -q "^$project_path/"; then
-                echo "Detected changes in $project ($project_path)"
-                # 添加到变化的项目列表
-                changed_projects=$(echo "$changed_projects" | jq --arg proj "$project" '. + [$proj]')
-                # 添加项目配置
-                project_config=$(echo "$config" | jq ".projects[] | select(.name == \"$project\")")
+                echo "✅ Detected changes in $project_name ($project_path)"
+                
+                # 添加项目名到数组
+                changed_projects=$(echo "$changed_projects" | jq --arg name "$project_name" '. + [$name]')
+                
+                # 添加项目配置到数组
+                project_config=$(echo "$config" | jq ".projects[] | select(.name == \"$project_name\")")
                 project_configs=$(echo "$project_configs" | jq --argjson config "$project_config" '. + [$config]')
+                
                 has_changes="true"
+              else
+                echo "⏭️  No changes in $project_name ($project_path)"
               fi
-            done
+            done < <(echo "$config" | jq -r '.projects[].name')
           fi
 
-          echo "changed-projects=$changed_projects" >> $GITHUB_OUTPUT
-          echo "project-configs=$project_configs" >> $GITHUB_OUTPUT
+          # 确保输出格式正确
+          {
+            echo "changed-projects<<EOF"
+            echo "$changed_projects"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+          {
+            echo "project-configs<<EOF"
+            echo "$project_configs"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
           echo "has-changes=$has_changes" >> $GITHUB_OUTPUT
-          echo "Final changed projects: $changed_projects"
-          echo "Final project configs: $project_configs"
+
+          echo "=== Summary ==="
+          echo "Changed projects: $changed_projects"
+          echo "Has changes: $has_changes"
 
   # 构建和部署
   deploy:
