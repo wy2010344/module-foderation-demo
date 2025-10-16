@@ -40,7 +40,7 @@ jobs:
 
       # 并行构建两个项目（因为相互依赖，构建时会使用本地类型）
       - name: Build all projects
-        run: pnpm build:all
+        run: pnpm build
 
       # 部署策略：先部署一个，等待可用，再部署另一个，最后重新部署第一个
       - name: Deploy mf_project_2 (first deployment)

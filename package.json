@@ -6,11 +6,16 @@
   "scripts": {
     "prepare": "husky",
     "commit": "git-cz",
-    "build:all": "pnpm --filter mf_project_2 build && pnpm --filter mf_project_3 build",
-    "deploy:all": "pnpm --filter mf_project_2 deploy && pnpm --filter mf_project_3 deploy",
+    "dev": "pnpm --parallel --filter \"mf_project_*\" dev",
     "dev:mf2": "pnpm --filter mf_project_2 dev",
     "dev:mf3": "pnpm --filter mf_project_3 dev",
-    "types:all": "pnpm --filter mf_project_2 types && pnpm --filter mf_project_3 types"
+    "build": "pnpm --parallel --filter \"mf_project_*\" build",
+    "build:mf2": "pnpm --filter mf_project_2 build",
+    "build:mf3": "pnpm --filter mf_project_3 build",
+    "preview": "pnpm --parallel --filter \"mf_project_*\" preview",
+    "deploy": "pnpm --filter mf_project_2 deploy && pnpm --filter mf_project_3 deploy",
+    "clean": "pnpm --parallel --filter \"mf_project_*\" exec rm -rf dist node_modules/.cache @mf-types",
+    "types": "pnpm --parallel --filter \"mf_project_*\" types"
   },
   "keywords": [],
   "author": "wy2010344",
