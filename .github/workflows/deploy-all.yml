@@ -38,6 +38,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # 验证 Cloudflare API Token
+      - name: Verify Cloudflare API Token
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          echo "Verifying Cloudflare API Token..."
+          npx wrangler whoami
+
       # 并行构建两个项目（因为相互依赖，构建时会使用本地类型）
       - name: Build all projects
         run: pnpm build
@@ -47,7 +55,9 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
-          npx wrangler pages deploy packages/mf_project_2/dist --project-name mf2-8nl
+          echo "Deploying to project: mf2"
+          echo "Token length: ${#CLOUDFLARE_API_TOKEN}"
+          npx wrangler pages deploy packages/mf_project_2/dist --project-name mf2
 
       - name: Wait for mf_project_2 to be available
         run: |
@@ -66,7 +76,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
-          npx wrangler pages deploy packages/mf_project_3/dist --project-name mf3-6sa
+          npx wrangler pages deploy packages/mf_project_3/dist --project-name mf3
 
       - name: Wait for mf_project_3 to be available
         run: |
@@ -86,7 +96,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
-          npx wrangler pages deploy packages/mf_project_2/dist --project-name mf2-8nl
+          npx wrangler pages deploy packages/mf_project_2/dist --project-name mf2
 
       - name: Verify deployments
         run: |

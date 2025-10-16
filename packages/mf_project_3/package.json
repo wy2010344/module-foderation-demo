@@ -6,7 +6,7 @@
     "dev": "rsbuild dev --open",
     "build": "rsbuild build",
     "preview": "rsbuild preview",
-    "deploy": "pnpm build && wrangler pages deploy dist --project-name mf3-6sa",
+    "deploy": "pnpm build && wrangler pages deploy dist --project-name mf3",
     "types": "rsbuild build --analyze"
   },
   "dependencies": {
