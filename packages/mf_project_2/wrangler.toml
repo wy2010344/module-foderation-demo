@@ -1,0 +1,6 @@
+name = "mf2-8nl"
+compatibility_date = "2024-10-16"
+
+[env.production.pages]
+name = "mf2-8nl"
+compatibility_date = "2024-10-16"

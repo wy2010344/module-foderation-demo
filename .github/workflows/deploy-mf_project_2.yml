@@ -29,11 +29,11 @@ jobs:
         run: pnpm --filter mf_project_2 build
 
       - name: Install Wrangler
-        run: npm install -g @cloudflare/wrangler
+        run: npm install -g wrangler
 
       - name: Publish to Cloudflare Pages
         env:
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
-          # adjust output directory if your rsbuild outputs to a different folder
-          wrangler pages publish packages/mf_project_2/dist --project-name mf2-8nl
+          cd packages/mf_project_2
+          wrangler pages deploy dist --project-name mf2-8nl
