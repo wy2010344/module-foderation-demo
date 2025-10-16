@@ -15,7 +15,7 @@ const Provider: React.FC = () => {
         <Button />
         <Tab />
       </div>
-      <h1 className="title">chg-1来自mf2-8nl的组件</h1>
+      <h1 className="title">chg-2来自mf2-8nl的组件</h1>
     </div>
   )
 }
